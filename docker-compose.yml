@@ -1,0 +1,36 @@
+version: '3'
+services:
+    front:
+        image: nginx
+        volumes:
+            - ./default.conf:/etc/nginx/conf.d/default.conf
+        networks:
+            - default
+            - proxy
+        labels:
+            - traefik.http.routers.gitea.rule=Host(`${APP_HOST}`) && PathPrefix(`/gitea`)
+        depends_on:
+            - app
+    app:
+        image: gitea/gitea:latest
+        ports:
+            - '922:22'
+        volumes:
+            - ./data:/data
+        environment:
+            - ROOT_URL=http://${APP_HOST}/gitea/
+        depends_on:
+            - database
+    database:
+        image: postgres:12
+        volumes:
+            - data:/var/lib/postgresql/data
+        environment:
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_USER=gitea
+            - POSTGRES_DB=gitea
+volumes:
+    data:
+networks:
+    proxy:
+        external: true
